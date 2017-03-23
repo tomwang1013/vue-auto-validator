@@ -23,7 +23,9 @@
     data: function() {
       return {
         errors: {},
-        firstInvalidName: ''
+        firstInvalidName: '',
+        fieldValidateds: {},
+        submitting: false
       };
     },
 
@@ -134,30 +136,17 @@
       },
 
       onsubmit: function(evt) {
-        var fm = this.$refs.fm;
         var me = this;
 
+        this.submitting = true;
         this.firstInvalidName = '';
+
         _.forOwn(this.rules, function(rule, name) {
+          me.fieldValidateds[name] = false;
           me.validateField(rule, name);
         });
 
-        if (this.firstInvalidName) {
-          evt.preventDefault();
-
-          if (this.getProp('focusInvalidOnSubmit')) {
-            fm[this.firstInvalidName].focus();
-          }
-
-          this.getProp('invalidHandler').call(this, evt, fm);
-          this.$emit('invalidform', this.errorMsgMap());
-
-          return;
-        }
-
-        this.getProp('submitHandler').call(this, evt, fm);
-
-        // follow default submit
+        evt.preventDefault();
       },
 
       tryValidate: function(evt) {
@@ -172,46 +161,70 @@
         this.validateField(this.rules[name], name);
       },
 
-      validateField: function(rule, name) {
+      updateErrorMsg: function(name, valid, msg) {
         var fm = this.$refs.fm;
         var errCmp = this.errors[name];
-        var me = this;
-        var valid = true;
-        var msg = '';
-
-        // boolean rule, rule is methodName, like: name: 'required'
-        if (_.isString(rule)) {
-          if (!methods[rule](fm[name])) {
-            valid = false;
-            msg = me.messages[name];
-          }
-        } else {
-          _.forOwn(rule, function(args, methodName) {
-            if (!methods[methodName](fm[name], args)) {
-              valid = false;
-              msg = me.formatMsg(me.messages[name][methodName], args);
-
-              // stop on first failed rule
-              return false;
-            }
-          });
-        }
 
         if (valid) {
           errCmp.hide();
-          me.getProp('unhighlight').call(me, fm[name]);
+          this.getProp('unhighlight').call(this, fm[name]);
         } else {
           errCmp.show(msg);
-          me.getProp('highlight').call(me, fm[name]);
+          this.getProp('highlight').call(this, fm[name]);
 
-          if (!me.firstInvalidName) {
-            me.firstInvalidName = name;
+          if (!this.firstInvalidName) {
+            this.firstInvalidName = name;
           }
 
-          me.$emit('invalidfield', name, errCmp.message);
+          this.$emit('invalidfield', name, msg);
         }
 
-        return valid;
+        if (this.submitting) {
+          this.fieldValidateds[name] = true;
+
+          if (_.every(_.values(this.fieldValidateds), Boolean)) {
+            if (this.firstInvalidName) {
+              if (this.getProp('focusInvalidOnSubmit')) {
+                fm[this.firstInvalidName].focus();
+              }
+
+              this.getProp('invalidHandler').call(this, fm);
+              this.$emit('invalidform', this.errorMsgMap());
+            } else {
+              this.getProp('submitHandler').call(this, fm);
+            }
+          }
+        }
+      },
+
+      validateField: function(rule, name) {
+        var fm = this.$refs.fm;
+        var me = this;
+        var valid = true;
+
+        // boolean rule, rule is methodName, like: name: 'required'
+        if (_.isString(rule)) {
+          this.updateErrorMsg(name, methods[rule].call(this, fm[name]), me.messages[name]);
+          return;
+        }
+
+        _.forOwn(rule, function(args, methodName) {
+          if (methodName == 'remote') {
+            me.pendings[name] = true;
+            methods[methodName].call(me, fm[name], args, updateErrorMsg.bind(this));
+            return;
+          }
+
+          if (!methods[methodName].call(me, fm[name], args)) {
+            msg = me.formatMsg(me.messages[name][methodName], args);
+            updateErrorMsg(name, false, msg);
+
+            // stop on first failed rule
+            return false;
+          } else {
+            updateErrorMsg(name, true);
+          }
+        });
       }
     },
 
