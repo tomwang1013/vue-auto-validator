@@ -10,9 +10,12 @@
 <script>
   var _ = require('lodash');
   var Vue = require('vue');
+  var VueResource = require('vue-resource');
   var methods = require('./lib/validate_methods.js');
   var ErrMsg = require('./lib/error_message.vue');
   var defaultProps = require('./lib/default_props.js');
+
+  Vue.use(VueResource);
 
   module.exports = {
     name: 'form-validator',
@@ -176,8 +179,7 @@
         var valid = true;
         var msg = '';
 
-        // boolean rule, rule is methodName, like:
-        // name: 'required'
+        // boolean rule, rule is methodName, like: name: 'required'
         if (_.isString(rule)) {
           if (!methods[rule](fm[name])) {
             valid = false;
