@@ -87,6 +87,11 @@
       // focus the first invalid field on submit
       focusInvalidOnSubmit: {
         type: Boolean,
+      },
+
+      setupRulesOnMounted: {
+        type: Boolean,
+        default: true
       }
     },
 
@@ -226,47 +231,53 @@
             me.updateErrorMsg(name, true);
           }
         });
+      },
+
+      setupRules: function() {
+        var fm = this.$refs.fm;
+        var me = this;
+
+        _.forOwn(this.rules, function(rule, name) {
+          var field = fm[name];
+          var label = fm.querySelector("label[for='" + (field.id || field.name) + "']");
+          var mp = window.document.createElement('span');
+
+          switch (me.getProp('errorPlacement')) {
+            case 'before_label':
+              label.parentNode.insertBefore(mp, label);
+              break;
+            case 'after_label':
+              label.parentNode.insertBefore(mp, label.nextElementSibling);
+              break;
+            case 'before_field':
+              field.parentNode.insertBefore(mp, field);
+              break;
+            case 'after_field':
+              field.parentNode.insertBefore(mp, field.nextElementSibling);
+              break;
+            default:
+              console.error('invalid errorPlacement: ' + me.getProp('errorPlacement'));
+          }
+
+          me.errors[name] = new Vue({
+            el: mp,
+            render: function(h) {
+              return h(ErrMsg, {
+                props: {
+                  name: name,
+                  errorClass: me.getProp('errorClass')
+                }
+              });
+            }
+          }).$children[0];
+        });
       }
     },
 
     mounted: function() {
-      var fm = this.$refs.fm;
-      var me = this;
-
-      _.forOwn(this.rules, function(rule, name) {
-        var field = fm[name];
-        var label = fm.querySelector("label[for='" + field.id + "']");
-        var mp = window.document.createElement('span');
-
-        switch (me.getProp('errorPlacement')) {
-          case 'before_label':
-            label.parentNode.insertBefore(mp, label);
-            break;
-          case 'after_label':
-            label.parentNode.insertBefore(mp, label.nextElementSibling);
-            break;
-          case 'before_field':
-            field.parentNode.insertBefore(mp, field);
-            break;
-          case 'after_field':
-            field.parentNode.insertBefore(mp, field.nextElementSibling);
-            break;
-          default:
-            console.error('invalid errorPlacement: ' + me.getProp('errorPlacement'));
-        }
-
-        me.errors[name] = new Vue({
-          el: mp,
-          render: function(h) {
-            return h(ErrMsg, {
-              props: {
-                name: name,
-                errorClass: me.getProp('errorClass')
-              }
-            });
-          }
-        }).$children[0];
-      });
+      if (this.setupRulesOnMounted) {
+        this.setupRules();
+      }
     }
   };
 </script>
