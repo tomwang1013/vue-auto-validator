@@ -150,7 +150,6 @@
           me.fieldValidateds[name] = false;
           me.validateField(rule, name);
         });
-
       },
 
       tryValidate: function(evt) {
