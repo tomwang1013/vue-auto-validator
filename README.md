@@ -1,5 +1,5 @@
 # introduction
-vue-auto-validator is a flexible and simple vue component to validate form, which is heavy inpired by [jquery-validation](https://jqueryvalidation.org/). It provides some pre-defined validation methods and you can add custom ones. With there validation methods, you set up rules and related messages, as well where to display error messages when validation fails.
+vue-auto-validator is a flexible and simple vue component for form validation, which is heavy inpired by [jquery-validation](https://jqueryvalidation.org/). It provides some pre-defined validation methods and you can add custom ones. With there validation methods, you set up rules and related messages, as well where to display error messages when validation fails.
 
 # get started
 
@@ -13,7 +13,10 @@ var FormValidator = require('vue-auto-validator')
 var Vue = require('vue');
 
 var fv = new Vue({
+  el: '#form-wrapper',
+
   data: {
+    // validation rules
     rules: {
       name: 'required',
       email: {
@@ -22,6 +25,7 @@ var fv = new Vue({
       }
     },
 
+    // related error messages
     messages: {
       name: 'name should not be empty',
       email: {
@@ -37,8 +41,7 @@ var fv = new Vue({
 });
 
 ```
-
-html, just use `form-validator` instead of `form`:
+For html, just use `form-validator` instead of `form`:
 ```html
 <div id='form-wrapper'>
   <form-validator action='/path/to/url' v-bind='$data'>
@@ -56,6 +59,8 @@ html, just use `form-validator` instead of `form`:
   </form-validator>
 </div>
 ```
+That's all!
+
 # component detail
 ## props
 **rules**
