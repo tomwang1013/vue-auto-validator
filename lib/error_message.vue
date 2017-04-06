@@ -5,12 +5,14 @@
 <script>
   module.exports = {
     name: 'fm-validation-error-msg',
+
     data: function() {
       return {
         isShow: false,
         message: ''
       }
     },
+
     props: {
       errorClass: {
         type: String,

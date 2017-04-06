@@ -8,7 +8,7 @@
   var _ = require('lodash');
   var Vue = require('vue');
   var methods = require('./lib/validate_methods.js');
-  var ErrMsg = require('./lib/validate_methods.js');
+  var ErrMsg = require('./lib/error_message.vue');
 
   module.exports = {
     name: 'form-validator',
@@ -42,12 +42,12 @@
 
       errorClass: {
         type: String,
-        default: 'o-error-field'
+        default: 'u-input-error'
       },
 
       validClass: {
         type: String,
-        default: 'o-valid-field'
+        default: 'o-input-ok'
       },
 
       // where to place the error message: before, after
@@ -64,16 +64,23 @@
 
     methods: {
       onsubmit: function(evt) {
+        evt.preventDefault();
         var fm = this.$refs.fm;
         var me = this;
         var lastInvalidName = '';
 
         _.forOwn(this.rules, function(rule, name) {
-          _forOwn(rule, function(methodName, args) {
+          _.forOwn(rule, function(args, methodName) {
+            if (!_.isArray(args)) {
+              args = [args];
+            }
+
+            var errCmp = me.errors[name].$children[0];
+
             if (methods[methodName].apply(fm[name], args)) {
-              me.errors[name].hide();
+              errCmp.hide();
             } else {
-              me.errors[name].show(me.messages[name][methodName]);
+              errCmp.show(me.messages[name][methodName]);
               lastInvalidName = name;
             }
           });
@@ -81,17 +88,17 @@
 
         if (lastInvalidName) {
           fm[lastInvalidName].focus();
-          e.preventDefault();
+          evt.preventDefault();
           return;
         }
 
         if (this.submitHandler) {
           this.submitHandler(fm);
-          e.preventDefault();
+          evt.preventDefault();
           return;
         }
 
-        fm.submit();
+        // follow default submit
       },
 
       onfocusout: function(evt) {

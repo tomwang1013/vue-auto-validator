@@ -1,0 +1,37 @@
+{
+  "name": "vue-form-validator",
+  "version": "0.0.1",
+  "description": "simple form validator inspired by jquery-validation plugin",
+  "main": "index.vue",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomwang1013/vue-form-validator.git"
+  },
+  "keywords": [
+    "vue2",
+    "validation",
+    "validator"
+  ],
+  "dependencies": {
+    "vue": "^2.1.10",
+    "lodash": "^4.13.1"
+  },
+  "devDependencies": {
+    "css-loader": "^0.27.3",
+    "resolve-url-loader": "^2.0.2",
+    "node-sass": "^3.4.2",
+    "sass-loader": "^4.1.1",
+    "vue-loader": "^11.1.4",
+    "vue-template-compiler": "^2.2.4",
+    "webpack": "^2.2.1"
+  },
+  "author": "tomwang1013",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tomwang1013/vue-form-validator/issues"
+  },
+  "homepage": "https://github.com/tomwang1013/vue-form-validator#readme"
+}
