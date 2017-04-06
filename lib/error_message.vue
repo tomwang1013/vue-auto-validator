@@ -33,6 +33,10 @@
       show: function(message) {
         this.message = message;
         this.isShow = true;
+      },
+
+      isValid: function() {
+        return !this.isShow;
       }
     }
   };

@@ -1,8 +1,8 @@
 <template>
   <form @submit='onsubmit'
-    @focusout='onfocusout'
-    @change='onchange'
-    @input='oninput' ref='fm'>
+    @focusout='tryValidate'
+    @change='tryValidate'
+    @input='tryValidate' ref='fm'>
     <slot>all fields here</slot>
   </form>
 </template>
@@ -53,7 +53,7 @@
       // class added to valid field(error message is hidden by default)
       validFieldClass: {
         type: String,
-        default: 'o-input-ok'
+        default: 'u-input-ok'
       },
 
       // where to place the error message: before, after
@@ -66,6 +66,7 @@
       highlight: {
         type: Function,
         default: function(field) {
+          field.classList.add(this.errorClass);
         }
       },
 
@@ -73,6 +74,8 @@
       unhighlight: {
         type: Function,
         default: function(field) {
+          field.classList.remove(this.errorClass);
+          field.classList.add(this.validFieldClass);
         }
       }
     },
@@ -81,9 +84,9 @@
       onsubmit: function(evt) {
         var fm = this.$refs.fm;
         var me = this;
-          evt.preventDefault();
 
-        this.validate();
+        this.firstInvalidName = '';
+        _.forOwn(this.rules, this.validateField.bind(this));
 
         if (this.firstInvalidName) {
           fm[this.firstInvalidName].focus();
@@ -105,44 +108,51 @@
         // follow default submit
       },
 
-      onfocusout: function(evt) {
+      tryValidate: function(evt) {
+        var name  = evt.target.name;
+
+        // no need to validate it
+        if (!this.rules[name]) return;
+
+        // all fields are valid, validate it on submit
+        if (!this.firstInvalidName) return;
+
+        // focus it if invalid
+        if (!this.validateField(this.rules[name], name)) {
+          evt.target.focus();
+        }
       },
 
-      onchange: function(evt) {
-      },
-
-      oninput: function(evt) {
-      },
-
-      validate: function() {
+      validateField: function(rule, name) {
         var fm = this.$refs.fm;
+        var errCmp = this.errors[name];
         var me = this;
+        var valid = true;
 
-        this.firstInvalidName = '';
+        _.forOwn(rule, function(args, methodName) {
+          if (!_.isArray(args)) {
+            args = [args];
+          }
 
-        _.forOwn(this.rules, function(rule, name) {
-          _.forOwn(rule, function(args, methodName) {
-            if (!_.isArray(args)) {
-              args = [args];
-            }
+          if (methods[methodName].apply(fm[name], args)) {
+            return;
+          }
 
-            var errCmp = me.errors[name];
+          valid = false;
+          errCmp.show(me.messages[name][methodName]);
+          me.highlight(fm[name]);
 
-            if (methods[methodName].apply(fm[name], args)) {
-              errCmp.hide();
-              me.highlight(fm[name]);
-            } else {
-              errCmp.show(me.messages[name][methodName]);
-              me.unhighlight(fm[name]);
-
-              if (!me.firstInvalidName) {
-                me.firstInvalidName = name;
-              }
-            }
-          });
+          if (!me.firstInvalidName) {
+            me.firstInvalidName = name;
+          }
         });
 
-        return this.firstInvalidName != '';
+        if (valid) {
+          errCmp.hide();
+          me.unhighlight(fm[name]);
+        }
+
+        return valid;
       }
     },
 
@@ -177,4 +187,11 @@
 </script>
 
 <style lang='sass'>
+  .u-input-error {
+    color: #f00;
+  }
+
+  .u-input-ok {
+    border-color: #0f0;
+  }
 </style>
