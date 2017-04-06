@@ -14,6 +14,11 @@
     },
 
     props: {
+      name: {
+        type: String,
+        required: true
+      },
+
       errorClass: {
         type: String,
         required: true

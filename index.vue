@@ -1,5 +1,8 @@
 <template>
-  <form @submit='onsubmit' @focusout='onfocusout' @change='onchange' @input='oninput' ref='fm'>
+  <form @submit='onsubmit'
+    @focusout='onfocusout'
+    @change='onchange'
+    @input='oninput' ref='fm'>
     <slot>all fields here</slot>
   </form>
 </template>
@@ -15,7 +18,8 @@
 
     data: function() {
       return {
-        errors: {}
+        errors: {},
+        firstInvalidName: ''
       };
     },
 
@@ -40,12 +44,14 @@
         type: Object,
       },
 
+      // class added to error message & invalid field
       errorClass: {
         type: String,
         default: 'u-input-error'
       },
 
-      validClass: {
+      // class added to valid field(error message is hidden by default)
+      validFieldClass: {
         type: String,
         default: 'o-input-ok'
       },
@@ -56,39 +62,37 @@
         default: 'after'
       },
 
-      // let user control the error display totally
-      showErrors: {
-        type: Function
+      // highlight invalid field
+      highlight: {
+        type: Function,
+        default: function(field) {
+        }
+      },
+
+      // unhighlight valid field
+      unhighlight: {
+        type: Function,
+        default: function(field) {
+        }
       }
     },
 
     methods: {
       onsubmit: function(evt) {
-        evt.preventDefault();
         var fm = this.$refs.fm;
         var me = this;
-        var lastInvalidName = '';
-
-        _.forOwn(this.rules, function(rule, name) {
-          _.forOwn(rule, function(args, methodName) {
-            if (!_.isArray(args)) {
-              args = [args];
-            }
-
-            var errCmp = me.errors[name].$children[0];
-
-            if (methods[methodName].apply(fm[name], args)) {
-              errCmp.hide();
-            } else {
-              errCmp.show(me.messages[name][methodName]);
-              lastInvalidName = name;
-            }
-          });
-        })
-
-        if (lastInvalidName) {
-          fm[lastInvalidName].focus();
           evt.preventDefault();
+
+        this.validate();
+
+        if (this.firstInvalidName) {
+          fm[this.firstInvalidName].focus();
+          evt.preventDefault();
+
+          if (this.invalidHandler) {
+            this.invalidHandler(fm);
+          }
+
           return;
         }
 
@@ -108,6 +112,37 @@
       },
 
       oninput: function(evt) {
+      },
+
+      validate: function() {
+        var fm = this.$refs.fm;
+        var me = this;
+
+        this.firstInvalidName = '';
+
+        _.forOwn(this.rules, function(rule, name) {
+          _.forOwn(rule, function(args, methodName) {
+            if (!_.isArray(args)) {
+              args = [args];
+            }
+
+            var errCmp = me.errors[name];
+
+            if (methods[methodName].apply(fm[name], args)) {
+              errCmp.hide();
+              me.highlight(fm[name]);
+            } else {
+              errCmp.show(me.messages[name][methodName]);
+              me.unhighlight(fm[name]);
+
+              if (!me.firstInvalidName) {
+                me.firstInvalidName = name;
+              }
+            }
+          });
+        });
+
+        return this.firstInvalidName != '';
       }
     },
 
@@ -128,9 +163,14 @@
         me.errors[name] = new Vue({
           el: mp,
           render: function(h) {
-            return h(ErrMsg, { props: { errorClass: me.errorClass } });
+            return h(ErrMsg, {
+              props: {
+                name: name,
+                errorClass: me.errorClass
+              }
+            });
           }
-        });
+        }).$children[0];
       });
     }
   };
