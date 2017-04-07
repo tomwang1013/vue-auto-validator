@@ -67,7 +67,8 @@
         default: defaultProps.validFieldClass
       },
 
-      // where to place the error message: before, after
+      // where to place the error message: before_label, after_label
+      // before_field, after_field
       errorPlacement: {
         type: String,
         default: defaultProps.errorPlacement
@@ -110,16 +111,13 @@
       // 'abc3cde4'
       formatMsg: function(msg, args) {
         var pat = new RegExp(/{[0-9]}/g);
-
-        if (!pat.test(msg)) return msg;
-
         var result = '';
         var oldLastIndex = 0;
         var match;
 
         while ((match = pat.exec(msg)) != null) {
           result += msg.slice(oldLastIndex, match.index);
-          result += args[parseInt(match[0][1])];
+          result += _.isArray(args) ? args[parseInt(match[0][1])] : args;
           oldLastIndex = pat.lastIndex;
         }
 
@@ -223,12 +221,24 @@
 
       _.forOwn(this.rules, function(rule, name) {
         var field = fm[name];
+        var label = fm.querySelector("label[for='" + field.id + "']");
         var mp = window.document.createElement('span');
 
-        if (me.errorPlacement == 'after') {
-          field.parentNode.appendChild(mp);
-        } else {
-          field.parentNode.insertBefore(mp, field);
+        switch (me.errorPlacement) {
+          case 'before_label':
+            label.parentNode.insertBefore(mp, label);
+            break;
+          case 'after_label':
+            label.parentNode.insertBefore(mp, label.nextElementSibling);
+            break;
+          case 'before_field':
+            field.parentNode.insertBefore(mp, field);
+            break;
+          case 'after_field':
+            field.parentNode.insertBefore(mp, field.nextElementSibling);
+            break;
+          default:
+            console.error('invalid errorPlacement: ' + me.errorPlacement);
         }
 
         me.errors[name] = new Vue({
