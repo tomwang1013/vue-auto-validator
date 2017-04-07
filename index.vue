@@ -12,6 +12,7 @@
   var Vue = require('vue');
   var methods = require('./lib/validate_methods.js');
   var ErrMsg = require('./lib/error_message.vue');
+  var defaultProps = require('./lib/default_props.js');
 
   module.exports = {
     name: 'form-validator',
@@ -23,15 +24,25 @@
       };
     },
 
+    setDefaultProps: function(options) {
+      _.assign(defaultProps, options);
+    },
+
+    addValidationMethod: function(methodName, fn) {
+      methods[methodName] = fn;
+    },
+
     props: {
       // form submitter to replace the default submit
       submitHandler: {
-        type: Function
+        type: Function,
+        default: defaultProps.submitHandler
       },
 
       // callback when the form validation failed
       invalidHandler: {
-        type: Function
+        type: Function,
+        default: defaultProps.invalidHandler
       },
 
       // validation rules
@@ -47,46 +58,84 @@
       // class added to error message & invalid field
       errorClass: {
         type: String,
-        default: 'u-input-error'
+        default: defaultProps.errorClass
       },
 
       // class added to valid field(error message is hidden by default)
       validFieldClass: {
         type: String,
-        default: 'u-input-ok'
+        default: defaultProps.validFieldClass
       },
 
       // where to place the error message: before, after
       errorPlacement: {
         type: String,
-        default: 'after'
+        default: defaultProps.errorPlacement
       },
 
       // highlight invalid field
       highlight: {
         type: Function,
-        default: function(field) {
-          field.classList.add(this.errorClass);
-        }
+        default: defaultProps.highlight
       },
 
       // unhighlight valid field
       unhighlight: {
         type: Function,
-        default: function(field) {
-          field.classList.remove(this.errorClass);
-          field.classList.add(this.validFieldClass);
-        }
+        default: defaultProps.unhighlight
       }
     },
 
     methods: {
+      errorMsgMap: function() {
+        var invalidErrors = _.pickBy(this.errors, function(err) {
+          return !err.isValid();
+        });
+
+        return _.mapValues(invalidErrors, function(err) {
+          return err.message;
+        });
+      },
+
+      // manually set error messages
+      showErrors: function(errors) {
+        var me = this;
+
+        _.forOwn(errors, function(msg, name) {
+          me.errors[name].show(msg);
+        });
+      },
+
+      // msg: 'abc{0}cde{1}', args: [3,4] =>
+      // 'abc3cde4'
+      formatMsg: function(msg, args) {
+        var pat = new RegExp(/{[0-9]}/g);
+
+        if (!pat.test(msg)) return msg;
+
+        var result = '';
+        var oldLastIndex = 0;
+        var match;
+
+        while ((match = pat.exec(msg)) != null) {
+          result += msg.slice(oldLastIndex, match.index);
+          result += args[parseInt(match[0][1])];
+          oldLastIndex = pat.lastIndex;
+        }
+
+        result += msg.slice(oldLastIndex);
+
+        return result;
+      },
+
       onsubmit: function(evt) {
         var fm = this.$refs.fm;
         var me = this;
 
         this.firstInvalidName = '';
-        _.forOwn(this.rules, this.validateField.bind(this));
+        _.forOwn(this.rules, function(rule, name) {
+          me.validateField(rule, name);
+        });
 
         if (this.firstInvalidName) {
           fm[this.firstInvalidName].focus();
@@ -96,12 +145,13 @@
             this.invalidHandler(fm);
           }
 
+          this.$emit('invalidform', this.errorMsgMap());
+
           return;
         }
 
         if (this.submitHandler) {
           this.submitHandler(fm);
-          evt.preventDefault();
           return;
         }
 
@@ -128,28 +178,39 @@
         var errCmp = this.errors[name];
         var me = this;
         var valid = true;
+        var msg = '';
 
-        _.forOwn(rule, function(args, methodName) {
-          if (!_.isArray(args)) {
-            args = [args];
+        // boolean rule, rule is methodName, like:
+        // name: 'required'
+        if (_.isString(rule)) {
+          if (!methods[rule](fm[name])) {
+            valid = false;
+            msg = me.messages[name];
           }
+        } else {
+          _.forOwn(rule, function(args, methodName) {
+            if (!methods[methodName](fm[name], args)) {
+              valid = false;
+              msg = me.formatMsg(me.messages[name][methodName], args);
 
-          if (methods[methodName].apply(fm[name], args)) {
-            return;
-          }
+              // stop on first failed rule
+              return false;
+            }
+          });
+        }
 
-          valid = false;
-          errCmp.show(me.messages[name][methodName]);
+        if (valid) {
+          errCmp.hide();
+          me.unhighlight(fm[name]);
+        } else {
+          errCmp.show(msg);
           me.highlight(fm[name]);
 
           if (!me.firstInvalidName) {
             me.firstInvalidName = name;
           }
-        });
 
-        if (valid) {
-          errCmp.hide();
-          me.unhighlight(fm[name]);
+          me.$emit('invalidfield', name, errCmp.message);
         }
 
         return valid;
