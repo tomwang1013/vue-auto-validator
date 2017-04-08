@@ -36,58 +36,63 @@
       // form submitter to replace the default submit
       submitHandler: {
         type: Function,
-        default: defaultProps.submitHandler
       },
 
       // callback when the form validation failed
       invalidHandler: {
         type: Function,
-        default: defaultProps.invalidHandler
       },
 
       // validation rules
       rules: {
         type: Object,
+        required: true
       },
 
       // messages when validation failed
       messages: {
         type: Object,
+        required: true
       },
 
       // class added to error message & invalid field
       errorClass: {
         type: String,
-        default: defaultProps.errorClass
       },
 
       // class added to valid field(error message is hidden by default)
       validFieldClass: {
         type: String,
-        default: defaultProps.validFieldClass
       },
 
       // where to place the error message: before_label, after_label
       // before_field, after_field
       errorPlacement: {
         type: String,
-        default: defaultProps.errorPlacement
       },
 
       // highlight invalid field
       highlight: {
         type: Function,
-        default: defaultProps.highlight
       },
 
       // unhighlight valid field
       unhighlight: {
         type: Function,
-        default: defaultProps.unhighlight
+      },
+
+      // focus the first invalid field on submit
+      focusInvalidOnSubmit: {
+        type: Boolean,
       }
     },
 
     methods: {
+      getProp: function(propName) {
+        if (this[propName] !== undefined) return this[propName];
+        else return defaultProps[propName];
+      },
+
       errorMsgMap: function() {
         var invalidErrors = _.pickBy(this.errors, function(err) {
           return !err.isValid();
@@ -107,8 +112,7 @@
         });
       },
 
-      // msg: 'abc{0}cde{1}', args: [3,4] =>
-      // 'abc3cde4'
+      // msg: 'abc{0}cde{1}', args: [3,4] => 'abc3cde4'
       formatMsg: function(msg, args) {
         var pat = new RegExp(/{[0-9]}/g);
         var result = '';
@@ -136,22 +140,19 @@
         });
 
         if (this.firstInvalidName) {
-          fm[this.firstInvalidName].focus();
           evt.preventDefault();
 
-          if (this.invalidHandler) {
-            this.invalidHandler(fm);
+          if (this.getProp('focusInvalidOnSubmit')) {
+            fm[this.firstInvalidName].focus();
           }
 
+          this.getProp('invalidHandler').call(this, evt, fm);
           this.$emit('invalidform', this.errorMsgMap());
 
           return;
         }
 
-        if (this.submitHandler) {
-          this.submitHandler(fm);
-          return;
-        }
+        this.getProp('submitHandler').call(this, evt, fm);
 
         // follow default submit
       },
@@ -165,10 +166,7 @@
         // all fields are valid, validate it on submit
         if (!this.firstInvalidName) return;
 
-        // focus it if invalid
-        if (!this.validateField(this.rules[name], name)) {
-          evt.target.focus();
-        }
+        this.validateField(this.rules[name], name);
       },
 
       validateField: function(rule, name) {
@@ -199,10 +197,10 @@
 
         if (valid) {
           errCmp.hide();
-          me.unhighlight(fm[name]);
+          me.getProp('unhighlight').call(me, fm[name]);
         } else {
           errCmp.show(msg);
-          me.highlight(fm[name]);
+          me.getProp('highlight').call(me, fm[name]);
 
           if (!me.firstInvalidName) {
             me.firstInvalidName = name;
@@ -224,7 +222,7 @@
         var label = fm.querySelector("label[for='" + field.id + "']");
         var mp = window.document.createElement('span');
 
-        switch (me.errorPlacement) {
+        switch (me.getProp('errorPlacement')) {
           case 'before_label':
             label.parentNode.insertBefore(mp, label);
             break;
@@ -238,7 +236,7 @@
             field.parentNode.insertBefore(mp, field.nextElementSibling);
             break;
           default:
-            console.error('invalid errorPlacement: ' + me.errorPlacement);
+            console.error('invalid errorPlacement: ' + me.getProp('errorPlacement'));
         }
 
         me.errors[name] = new Vue({
@@ -247,7 +245,7 @@
             return h(ErrMsg, {
               props: {
                 name: name,
-                errorClass: me.errorClass
+                errorClass: me.getProp('errorClass')
               }
             });
           }
@@ -256,13 +254,3 @@
     }
   };
 </script>
-
-<style lang='sass'>
-  .u-input-error {
-    color: #f00;
-  }
-
-  .u-input-ok {
-    border-color: #0f0;
-  }
-</style>
