@@ -10,12 +10,10 @@
 <script>
   var _ = require('lodash');
   var Vue = require('vue');
-  var VueResource = require('vue-resource');
+
   var methods = require('./lib/validate_methods.js');
   var ErrMsg = require('./lib/error_message.vue');
   var defaultProps = require('./lib/default_props.js');
-
-  Vue.use(VueResource);
 
   module.exports = {
     name: 'form-validator',
@@ -141,12 +139,13 @@
         this.submitting = true;
         this.firstInvalidName = '';
 
+        evt.preventDefault();
+
         _.forOwn(this.rules, function(rule, name) {
           me.fieldValidateds[name] = false;
           me.validateField(rule, name);
         });
 
-        evt.preventDefault();
       },
 
       tryValidate: function(evt) {
@@ -183,6 +182,9 @@
           this.fieldValidateds[name] = true;
 
           if (_.every(_.values(this.fieldValidateds), Boolean)) {
+            // every field validated, submitting over
+            this.submitting = false;
+
             if (this.firstInvalidName) {
               if (this.getProp('focusInvalidOnSubmit')) {
                 fm[this.firstInvalidName].focus();
@@ -210,19 +212,18 @@
 
         _.forOwn(rule, function(args, methodName) {
           if (methodName == 'remote') {
-            me.pendings[name] = true;
-            methods[methodName].call(me, fm[name], args, updateErrorMsg.bind(this));
+            methods[methodName].call(me, fm[name], args, me.updateErrorMsg.bind(me));
             return;
           }
 
           if (!methods[methodName].call(me, fm[name], args)) {
             msg = me.formatMsg(me.messages[name][methodName], args);
-            updateErrorMsg(name, false, msg);
+            me.updateErrorMsg(name, false, msg);
 
             // stop on first failed rule
             return false;
           } else {
-            updateErrorMsg(name, true);
+            me.updateErrorMsg(name, true);
           }
         });
       }
