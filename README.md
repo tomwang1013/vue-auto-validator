@@ -38,7 +38,7 @@ var fv = new Vue({
 
 ```
 
-html:
+html, just use `form-validator` instead of `form`:
 ```html
 <div id='form-wrapper'>
   <form-validator action='/path/to/url' v-bind='$data'>
@@ -59,6 +59,7 @@ html:
 
 # props
 * **rules**
+
 a rule defines applying which validation methods to a single form field, as:
 
 ```javascript
@@ -88,6 +89,7 @@ For bool validation rule, we can omit the params:
 ```
 
 * **messages**
+
 one-to-one error message for rules:
 
 ```javascript
@@ -100,6 +102,7 @@ one-to-one error message for rules:
 ```
 
 * **submitHandler(form-validator, form)**
+
 callback called when validation passes on submit. If not provided, follow default form submit behavior. It is the rignt place to ajax sutmit, like:
 ```javascript
 submitHandler: (function(validator, form) {
@@ -118,15 +121,19 @@ submitHandler: (function(validator, form) {
 
 ```
 * **invalidHandler**
+
 callback called when validation failed on submit
 
 * **errorClass**
+
 css class name for error messages(`span` tag) and related invalid field, default: u-input-error
 
 * **validFieldClass**
+
 css class name for valid field, default: u-input-ok
 
 * **errorPlacement**
+
 where to place the error message, being one of the following value:
   - before_label: before the label
   - after_label: after the label
@@ -134,26 +141,33 @@ where to place the error message, being one of the following value:
   - after_field: after the field
 
 * **highlight**
+
 how to highlight the invalid field, default: add `errorClass` to it
 
 * **unhighlight**
+
 how to unhighlight the valid field, default: add `validFieldClass` to it
 
 * **focusInvalidOnSubmit**
+
 whether to focus the first invalid field when validation failed on submit
 
 ## useful public methods
 * showErrors(errors)
+
 explicitly display errors. argument `errors` is a map from field name to error message like: `{ name: 'bad name' }`
 
 * setupRules()
+
 by default, rules are setup in form-validator's `mounted` hook(controlled by `setupRulesOnMounted` prop). Sometimes it is not what you want. You can manually setup rules by calling this function(set `setupRulesOnMounted` to false)
 
 ## events emitted
 * this.$emit('invalidfield', field-name, message)
+
 emitted when a field's validation failed
 
 * this.$emit('invalidform', errorMsgMaps)
+
 emitted when the form's validation failed on submit. `errorMsgMaps` is all errors map from field name to message
 
 ## global props configure
