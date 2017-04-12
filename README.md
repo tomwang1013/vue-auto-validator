@@ -56,12 +56,11 @@ html, just use `form-validator` instead of `form`:
   </form-validator>
 </div>
 ```
-
-# props
-* **rules**
+# component detail
+## props
+**rules**
 
 a rule defines applying which validation methods to a single form field, as:
-
 ```javascript
 {
   'field-name': {
@@ -69,9 +68,7 @@ a rule defines applying which validation methods to a single form field, as:
   }
 }
 ```
-
 e.g.
-
 ```javascript
 {
   password: {
@@ -79,16 +76,13 @@ e.g.
   }
 }
 ```
-
 For bool validation rule, we can omit the params:
-
 ```javascript
 {
   name: 'required' // same as name: { required: true }
 }
 ```
-
-* **messages**
+**messages**
 
 one-to-one error message for rules:
 
@@ -101,7 +95,7 @@ one-to-one error message for rules:
 }
 ```
 
-* **submitHandler(form-validator, form)**
+**submitHandler(form-validator, form)**
 
 callback called when validation passes on submit. If not provided, follow default form submit behavior. It is the rignt place to ajax sutmit, like:
 ```javascript
@@ -120,53 +114,53 @@ submitHandler: (function(validator, form) {
 }).bind(this) // bind this if you like
 
 ```
-* **invalidHandler**
+**invalidHandler**
 
 callback called when validation failed on submit
 
-* **errorClass**
+**errorClass**
 
 css class name for error messages(`span` tag) and related invalid field, default: u-input-error
 
-* **validFieldClass**
+**validFieldClass**
 
 css class name for valid field, default: u-input-ok
 
-* **errorPlacement**
+**errorPlacement**
 
 where to place the error message, being one of the following value:
   - before_label: before the label
   - after_label: after the label
   - before_field: before the field
   - after_field: after the field
-
-* **highlight**
+  
+**highlight**
 
 how to highlight the invalid field, default: add `errorClass` to it
 
-* **unhighlight**
+**unhighlight**
 
 how to unhighlight the valid field, default: add `validFieldClass` to it
 
-* **focusInvalidOnSubmit**
+**focusInvalidOnSubmit**
 
 whether to focus the first invalid field when validation failed on submit
 
 ## useful public methods
-* showErrors(errors)
+**showErrors(errors)**
 
 explicitly display errors. argument `errors` is a map from field name to error message like: `{ name: 'bad name' }`
 
-* setupRules()
+**setupRules()**
 
 by default, rules are setup in form-validator's `mounted` hook(controlled by `setupRulesOnMounted` prop). Sometimes it is not what you want. You can manually setup rules by calling this function(set `setupRulesOnMounted` to false)
 
 ## events emitted
-* this.$emit('invalidfield', field-name, message)
+**this.$emit('invalidfield', field-name, message)**
 
 emitted when a field's validation failed
 
-* this.$emit('invalidform', errorMsgMaps)
+**this.$emit('invalidform', errorMsgMaps)**
 
 emitted when the form's validation failed on submit. `errorMsgMaps` is all errors map from field name to message
 
