@@ -171,10 +171,10 @@
 
         if (valid) {
           errCmp.hide();
-          this.getProp('unhighlight').call(this, fm[name]);
+          this.getProp('unhighlight')(this, fm[name]);
         } else {
           errCmp.show(msg);
-          this.getProp('highlight').call(this, fm[name]);
+          this.getProp('highlight')(this, fm[name]);
 
           if (!this.firstInvalidName) {
             this.firstInvalidName = name;
@@ -195,10 +195,10 @@
                 fm[this.firstInvalidName].focus();
               }
 
-              this.getProp('invalidHandler').call(this, fm);
+              this.getProp('invalidHandler')(this, fm);
               this.$emit('invalidform', this.errorMsgMap());
             } else {
-              this.getProp('submitHandler').call(this, fm);
+              this.getProp('submitHandler')(this, fm);
             }
           }
         }
