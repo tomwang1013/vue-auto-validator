@@ -1,5 +1,5 @@
 {
-  "name": "vue-form-validator",
+  "name": "vue-auto-validator",
   "version": "0.0.1",
   "description": "simple form validator inspired by jquery-validation plugin",
   "main": "index.vue",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tomwang1013/vue-form-validator.git"
+    "url": "git+https://github.com/tomwang1013/vue-auto-validator.git"
   },
   "keywords": [
     "vue2",
@@ -30,7 +30,10 @@
   "author": "tomwang1013",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tomwang1013/vue-form-validator/issues"
+    "url": "https://github.com/tomwang1013/vue-auto-validator/issues"
   },
-  "homepage": "https://github.com/tomwang1013/vue-form-validator#readme"
+  "homepage": "https://github.com/tomwang1013/vue-auto-validator#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
 }
