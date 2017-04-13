@@ -62,6 +62,29 @@ For html, just use `form-validator` instead of `form`:
 That's all!
 
 # component detail
+## validation methods
+1. `required(true)`
+2. `minLength(min-string-length)`
+3. `maxLength(max-string-length)`
+4. `min(min-integer-value)`
+5. `max(max-integer-value)`
+6. `email(true)`
+7. `equalTo(other-field-name)`
+8. `remote(url)` result returned from server should be of form: `{ valid: true/false, message: error message if invalid }`
+
+#### add custom validation methods:
+```javascript
+var FV = require('vue-auto-validator');
+
+// element: form field
+// args: single value or array
+// return true if validation passes, false otherwise
+FV.addValidationMethod('method-name', function(element, [args]) {
+  // e.g.
+  return element.value.length == 6; 
+});   
+```
+
 ## props
 **rules**
 
@@ -172,7 +195,7 @@ emitted when the form's validation failed on submit. `errorMsgMaps` is all error
 ## global props configure
 you can set the props default values for all forms globally:
 ```javascript
-var FV  = require('vue-form-validator');
+var FV  = require('vue-auto-validator');
 
 FV.setDefaultProps({
   // common props for all forms
