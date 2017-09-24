@@ -1,6 +1,6 @@
 {
   "name": "vue-auto-validator",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "simple form validator inspired by jquery-validation plugin",
   "main": "index.vue",
   "scripts": {

@@ -8,14 +8,14 @@
 </template>
 
 <script>
-  var _ = require('lodash');
-  var Vue = require('vue');
+  let _ = require('lodash');
+  import Vue from 'vue';
 
-  var methods = require('./lib/validate_methods.js');
-  var ErrMsg = require('./lib/error_message.vue');
-  var defaultProps = require('./lib/default_props.js');
+  let methods = require('./lib/validate_methods.js');
+  let ErrMsg = require('./lib/error_message.vue');
+  let defaultProps = require('./lib/default_props.js');
 
-  module.exports = {
+  export default {
     name: 'form-validator',
 
     data: function() {
@@ -102,7 +102,7 @@
       },
 
       errorMsgMap: function() {
-        var invalidErrors = _.pickBy(this.errors, function(err) {
+        let invalidErrors = _.pickBy(this.errors, function(err) {
           return !err.isValid();
         });
 
@@ -113,7 +113,7 @@
 
       // manually set error messages
       showErrors: function(errors) {
-        var me = this;
+        let me = this;
 
         _.forOwn(errors, function(msg, name) {
           me.errors[name].show(msg);
@@ -122,10 +122,10 @@
 
       // msg: 'abc{0}cde{1}', args: [3,4] => 'abc3cde4'
       formatMsg: function(msg, args) {
-        var pat = new RegExp(/{[0-9]}/g);
-        var result = '';
-        var oldLastIndex = 0;
-        var match;
+        let pat = new RegExp(/{[0-9]}/g);
+        let result = '';
+        let oldLastIndex = 0;
+        let match;
 
         while ((match = pat.exec(msg)) != null) {
           result += msg.slice(oldLastIndex, match.index);
@@ -139,7 +139,7 @@
       },
 
       onsubmit: function(evt) {
-        var me = this;
+        let me = this;
 
         this.submitting = true;
         this.firstInvalidName = '';
@@ -153,7 +153,7 @@
       },
 
       tryValidate: function(evt) {
-        var name  = evt.target.name;
+        let name  = evt.target.name;
 
         // no need to validate it
         if (!this.rules[name]) return;
@@ -165,8 +165,8 @@
       },
 
       updateErrorMsg: function(name, valid, msg) {
-        var fm = this.$refs.fm;
-        var errCmp = this.errors[name];
+        let fm = this.$refs.fm;
+        let errCmp = this.errors[name];
 
         if (valid) {
           errCmp.hide();
@@ -204,9 +204,9 @@
       },
 
       validateField: function(rule, name) {
-        var fm = this.$refs.fm;
-        var me = this;
-        var valid = true;
+        let fm = this.$refs.fm;
+        let me = this;
+        let valid = true;
 
         // boolean rule, rule is methodName, like: name: 'required'
         if (_.isString(rule)) {
@@ -233,13 +233,13 @@
       },
 
       setupRules: function() {
-        var fm = this.$refs.fm;
-        var me = this;
+        let fm = this.$refs.fm;
+        let me = this;
 
         _.forOwn(this.rules, function(rule, name) {
-          var field = fm[name];
-          var label = fm.querySelector("label[for='" + (field.id || field.name) + "']");
-          var mp = window.document.createElement('span');
+          let field = fm[name];
+          let label = fm.querySelector("label[for='" + (field.id || field.name) + "']");
+          let mp = window.document.createElement('span');
 
           switch (me.getProp('errorPlacement')) {
             case 'before_label':
