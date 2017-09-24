@@ -2,12 +2,4 @@
 *.swo
 node_modules/
 npm-debug.log
-.idea/dictionaries/
-.idea/encodings.xml
-.idea/inspectionProfiles/
-.idea/jsLibraryMappings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/vue-auto-validator.iml
-.idea/workspace.xml
+.idea/
