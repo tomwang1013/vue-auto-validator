@@ -8,12 +8,11 @@
 </template>
 
 <script>
-  let _ = require('lodash');
-  import Vue from 'vue';
-
-  let methods = require('./lib/validate_methods.js');
-  let ErrMsg = require('./lib/error_message.vue');
-  let defaultProps = require('./lib/default_props.js');
+  import _ from 'lodash'
+  import Vue from 'vue'
+  import ErrMsg from './lib/error_message.vue'
+  import methods from './lib/validate_methods.js'
+  import defaultProps from './lib/default_props.js'
 
   export default {
     name: 'form-validator',

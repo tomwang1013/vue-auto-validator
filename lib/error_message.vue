@@ -3,7 +3,7 @@
 </template>
 
 <script>
-  module.exports = {
+  export default  {
     name: 'fm-validation-error-msg',
 
     data: function() {
