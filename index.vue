@@ -1,5 +1,5 @@
 <template>
-  <form @submit='onsubmit'
+  <form @submit.prevent='onsubmit'
     @focusout='tryValidate'
     @change='tryValidate'
     @input='tryValidate' ref='fm'>
@@ -8,41 +8,56 @@
 </template>
 
 <script>
-  import _ from 'lodash'
   import Vue from 'vue'
+  import _ from 'lodash'
   import ErrMsg from './lib/error_message.vue'
   import methods from './lib/validate_methods.js'
   import defaultProps from './lib/default_props.js'
+
+  const ErrMsgCtor = Vue.extend(ErrMsg);
 
   export default {
     name: 'form-validator',
 
     data: function() {
       return {
-        errors: {},
-        firstInvalidName: '',
+        errors: {},           // field name => error message comp
+        firstInvalidName: '', // first invalid field name
+
         fieldValidateds: {},
-        submitting: false
+        submitting: false     // if it is submitting the form, i.e. validating
       };
     },
 
-    setDefaultProps: function(options) {
-      _.assign(defaultProps, options);
-    },
-
-    addValidationMethod: function(methodName, fn) {
-      methods[methodName] = fn;
-    },
-
     props: {
-      // form submitter to replace the default submit
       submitHandler: {
         type: Function,
+        default: defaultProps.submitHandler
       },
 
-      // callback when the form validation failed
       invalidHandler: {
         type: Function,
+        default: defaultProps.invalidHandler
+      },
+
+      errorMsgClass: {
+        type: String,
+        default: defaultProps.errorMsgClass
+      },
+
+      errorFieldClass: {
+        type: String,
+        default: defaultProps.errorFieldClass
+      },
+
+      validFieldClass: {
+        type: String,
+        default: defaultProps.validFieldClass
+      },
+
+      errorPlacement: {
+        type: String,
+        default: defaultProps.errorPlacement
       },
 
       // validation rules
@@ -56,50 +71,10 @@
         type: Object,
         required: true
       },
-
-      // class added to error message & invalid field
-      errorClass: {
-        type: String,
-      },
-
-      // class added to valid field(error message is hidden by default)
-      validFieldClass: {
-        type: String,
-      },
-
-      // where to place the error message: before_label, after_label
-      // before_field, after_field
-      errorPlacement: {
-        type: String,
-      },
-
-      // highlight invalid field
-      highlight: {
-        type: Function,
-      },
-
-      // unhighlight valid field
-      unhighlight: {
-        type: Function,
-      },
-
-      // focus the first invalid field on submit
-      focusInvalidOnSubmit: {
-        type: Boolean,
-      },
-
-      setupRulesOnMounted: {
-        type: Boolean,
-        default: true
-      }
     },
 
     methods: {
-      getProp: function(propName) {
-        if (this[propName] !== undefined) return this[propName];
-        else return defaultProps[propName];
-      },
-
+      // { field name => error message }
       errorMsgMap: function() {
         let invalidErrors = _.pickBy(this.errors, function(err) {
           return !err.isValid();
@@ -112,42 +87,22 @@
 
       // manually set error messages
       showErrors: function(errors) {
-        let me = this;
-
-        _.forOwn(errors, function(msg, name) {
-          me.errors[name].show(msg);
-        });
+        _.forOwn(errors, (msg, name) => this.errors[name].show(msg));
       },
 
       // msg: 'abc{0}cde{1}', args: [3,4] => 'abc3cde4'
       formatMsg: function(msg, args) {
-        let pat = new RegExp(/{[0-9]}/g);
-        let result = '';
-        let oldLastIndex = 0;
-        let match;
-
-        while ((match = pat.exec(msg)) != null) {
-          result += msg.slice(oldLastIndex, match.index);
-          result += _.isArray(args) ? args[parseInt(match[0][1])] : args;
-          oldLastIndex = pat.lastIndex;
-        }
-
-        result += msg.slice(oldLastIndex);
-
-        return result;
+        if (!_.isArray(args)) args = [args];
+        return msg.replace(/\{(\d)\}/g, (match, i) => args[i]);
       },
 
       onsubmit: function(evt) {
-        let me = this;
-
         this.submitting = true;
         this.firstInvalidName = '';
 
-        evt.preventDefault();
-
-        _.forOwn(this.rules, function(rule, name) {
-          me.fieldValidateds[name] = false;
-          me.validateField(rule, name);
+        _.forOwn(this.rules, (rule, name) => {
+          this.fieldValidateds[name] = false;
+          this.validateField(rule, name);
         });
       },
 
@@ -163,40 +118,44 @@
         this.validateField(this.rules[name], name);
       },
 
-      updateErrorMsg: function(name, valid, msg) {
+      /**
+       * update field state according to the validation result
+       * @param name  {String}  field name
+       * @param valid {Boolean} if it is valid
+       * @param msg   {String}  error message if invalid
+       */
+      updateFieldStatus: function(name, valid, msg) {
         let fm = this.$refs.fm;
         let errCmp = this.errors[name];
 
         if (valid) {
           errCmp.hide();
-          this.getProp('unhighlight')(this, fm[name]);
+          fm[name].classList.remove(this.errorFieldClass);
+          fm[name].classList.add(this.validFieldClass);
         } else {
           errCmp.show(msg);
-          this.getProp('highlight')(this, fm[name]);
-
-          if (!this.firstInvalidName) {
-            this.firstInvalidName = name;
-          }
-
+          fm[name].classList.add(this.errorFieldClass);
+          
+          if (!this.firstInvalidName) this.firstInvalidName = name;
+          
           this.$emit('invalidfield', name, msg);
         }
 
+        // we click submit, check that all fields are validated
+        // and submit the form if all fields are valid or cancel
+        // if any field is invalid
         if (this.submitting) {
           this.fieldValidateds[name] = true;
 
           if (_.every(_.values(this.fieldValidateds), Boolean)) {
-            // every field validated, submitting over
             this.submitting = false;
 
             if (this.firstInvalidName) {
-              if (this.getProp('focusInvalidOnSubmit')) {
-                fm[this.firstInvalidName].focus();
-              }
-
-              this.getProp('invalidHandler')(this, fm);
+              fm[this.firstInvalidName].focus();
+              this.invalidHandler.call(this, fm);
               this.$emit('invalidform', this.errorMsgMap());
             } else {
-              this.getProp('submitHandler')(this, fm);
+              this.submitHandler.call(this, fm);
             }
           }
         }
@@ -204,78 +163,61 @@
 
       validateField: function(rule, name) {
         let fm = this.$refs.fm;
-        let me = this;
-        let valid = true;
 
         // boolean rule, rule is methodName, like: name: 'required'
         if (_.isString(rule)) {
-          this.updateErrorMsg(name, methods[rule].call(this, fm[name]), me.messages[name]);
+          this.updateFieldStatus(name, methods[rule].call(this, fm[name]), this.messages[name]);
           return;
         }
 
-        _.forOwn(rule, function(args, methodName) {
-          if (methodName == 'remote') {
-            methods[methodName].call(me, fm[name], args, me.updateErrorMsg.bind(me));
-            return;
-          }
-
-          if (!methods[methodName].call(me, fm[name], args)) {
-            msg = me.formatMsg(me.messages[name][methodName], args);
-            me.updateErrorMsg(name, false, msg);
-
-            // stop on first failed rule
-            return false;
+        _.forOwn(rule, (args, methodName) => {
+          if (methodName === 'remote') {
+            methods[methodName].call(this, fm[name], args, this.updateFieldStatus.bind(this));
+          } else if (!methods[methodName].call(this, fm[name], args)) {
+            this.updateFieldStatus(name, false, this.formatMsg(me.messages[name][methodName], args));
+            return false; // stop on first failed rule
           } else {
-            me.updateErrorMsg(name, true);
+            me.updateFieldStatus(name, true);
           }
         });
       },
 
       setupRules: function() {
         let fm = this.$refs.fm;
-        let me = this;
 
-        _.forOwn(this.rules, function(rule, name) {
+        _.forOwn(this.rules, (rule, name) => {
           let field = fm[name];
           let label = fm.querySelector("label[for='" + (field.id || field.name) + "']");
-          let mp = window.document.createElement('span');
 
-          switch (me.getProp('errorPlacement')) {
+          this.errors[name] = new ErrMsgCtor({
+            propsData: {
+              name: name,
+              errorClass: this.errorClass
+            }
+          }).$mount();
+
+          switch (this.errorPlacement) {
             case 'before_label':
-              label.parentNode.insertBefore(mp, label);
+              label.parentNode.insertBefore(this.errors[name].$el, label);
               break;
             case 'after_label':
-              label.parentNode.insertBefore(mp, label.nextElementSibling);
+              label.parentNode.insertBefore(this.errors[name].$el, label.nextElementSibling);
               break;
             case 'before_field':
-              field.parentNode.insertBefore(mp, field);
+              field.parentNode.insertBefore(this.errors[name].$el, field);
               break;
             case 'after_field':
-              field.parentNode.insertBefore(mp, field.nextElementSibling);
+              field.parentNode.insertBefore(this.errors[name].$el, field.nextElementSibling);
               break;
             default:
-              console.error('invalid errorPlacement: ' + me.getProp('errorPlacement'));
+              console.error('invalid errorPlacement: ' + this.errorPlacement);
           }
-
-          me.errors[name] = new Vue({
-            el: mp,
-            render: function(h) {
-              return h(ErrMsg, {
-                props: {
-                  name: name,
-                  errorClass: me.getProp('errorClass')
-                }
-              });
-            }
-          }).$children[0];
-        });
+        })
       }
     },
 
     mounted: function() {
-      if (this.setupRulesOnMounted) {
-        this.setupRules();
-      }
+      this.setupRules();
     }
   };
 </script>
