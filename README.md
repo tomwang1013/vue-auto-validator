@@ -119,7 +119,7 @@ one-to-one error message for rules:
   name: 'name should not empty',
   password: {
     minLength: 'at least {0} chars' // {i} will be replaced by the ith param
-  },
+  }
 }
 ```
 

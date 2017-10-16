@@ -174,10 +174,10 @@
           if (methodName === 'remote') {
             methods[methodName].call(this, fm[name], args, this.updateFieldStatus.bind(this));
           } else if (!methods[methodName].call(this, fm[name], args)) {
-            this.updateFieldStatus(name, false, this.formatMsg(me.messages[name][methodName], args));
+            this.updateFieldStatus(name, false, this.formatMsg(this.messages[name][methodName], args));
             return false; // stop on first failed rule
           } else {
-            me.updateFieldStatus(name, true);
+            this.updateFieldStatus(name, true);
           }
         });
       },
@@ -192,21 +192,21 @@
           this.errors[name] = new ErrMsgCtor({
             propsData: {
               name: name,
-              errorClass: this.errorClass
+              errorClass: this.errorMsgClass
             }
           }).$mount();
 
           switch (this.errorPlacement) {
-            case 'before_label':
+            case 'before-label':
               label.parentNode.insertBefore(this.errors[name].$el, label);
               break;
-            case 'after_label':
+            case 'after-label':
               label.parentNode.insertBefore(this.errors[name].$el, label.nextElementSibling);
               break;
-            case 'before_field':
+            case 'before-field':
               field.parentNode.insertBefore(this.errors[name].$el, field);
               break;
-            case 'after_field':
+            case 'after-field':
               field.parentNode.insertBefore(this.errors[name].$el, field.nextElementSibling);
               break;
             default:

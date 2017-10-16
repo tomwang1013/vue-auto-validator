@@ -4,7 +4,7 @@
   "description": "simple form validator inspired by jquery-validation plugin",
   "main": "index.vue",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:example": "webpack --watch"
   },
   "repository": {
     "type": "git",
@@ -18,14 +18,12 @@
   "dependencies": {
     "axios": "^0.16.1",
     "lodash": "^4.13.1",
-    "vue": "^2.1.10"
+    "vue":"^2.5.2"
   },
   "devDependencies": {
-    "css-loader": "^0.27.3",
-    "resolve-url-loader": "^2.0.2",
-    "vue-loader": "^11.1.4",
-    "vue-template-compiler": "^2.2.4",
-    "webpack": "^2.2.1"
+    "webpack":"^3.7.1",
+    "vue-loader": "^13.3.0",
+    "vue-template-compiler":"^2.5.2"
   },
   "author": "tomwang1013",
   "license": "MIT",
