@@ -10,7 +10,9 @@ new Vue({
         required: true,
         email: true
       },
-      password: 'required'
+      password: {
+        required: true
+      }
     },
 
     messages: {
@@ -18,7 +20,9 @@ new Vue({
         required: 'email is required!',
         email: 'invalid email format'
       },
-      password: 'password is required'
+      password: {
+        required: 'password is required'
+      }
     },
 
     errorPlacement: 'after-field'
