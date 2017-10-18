@@ -1,6 +1,12 @@
 import Vue from 'vue'
 import Validator from '../index.vue'
 
+Validator.addValidationMethod('between', (value, [min, max]) => {
+  value = parseInt(value);
+
+  return min <= value && value <= max;
+});
+
 Vue.component('validator', Validator);
 new Vue({
   el: '#app',
@@ -9,7 +15,7 @@ new Vue({
       email: {
         required: true,
         email: true,
-        remote: 'remote url'
+        remote: 'remote_url'
       },
       password: {
         required: true,
@@ -23,8 +29,9 @@ new Vue({
         required: true
       },
       age: {
-        min: 18,
-        max: 100
+        /*min: 18,
+        max: 100*/
+        between: [18, 100]
       },
       choice: {
         required: true
@@ -52,8 +59,9 @@ new Vue({
         required: 'gender is required!'
       },
       age: {
-        min: 'age must be greater or equal to {0}',
-        max: 'age must be less or equal to {0}'
+        /*min: 'age must be greater or equal to {0}',
+        max: 'age must be less or equal to {0}'*/
+        between: 'age must be in [{0}, {1}]'
       },
       choice: {
         required: 'choice is required!'
@@ -61,8 +69,6 @@ new Vue({
       has_kids: {
         required: 'has_kids is required!'
       }
-    },
-
-    errorPlacement: 'after-field'
+    }
   }
 });
