@@ -105,6 +105,7 @@
         return msg.replace(/\{(\d)\}/g, (match, i) => args[i]);
       },
 
+      // form submit handler
       _onsubmit: function(e) {
         this.submitting = true;
         this.firstInvalidName = '';
@@ -113,6 +114,7 @@
         _.keys(this.rules).forEach(fieldName => this.validateField(fieldName));
       },
 
+      // try to validate single field when value change or lose focus
       _tryValidate: function(evt) {
         let fieldName  = evt.target.name;
 
@@ -166,6 +168,7 @@
         if (valid) {
           errCmp.hide();
           this._unhightlightField(fieldEle);
+          this.$emit('validfield', fieldName);
         } else {
           errCmp.show(msg);
           this._hightlightField(fieldEle);
@@ -191,6 +194,7 @@
               this.invalidHandler.call(null, this);
               this.$emit('invalidform', this.errorMsgMap());
             } else {
+              this.$emit('validform');
               this.submitHandler.call(null, this);
             }
           }

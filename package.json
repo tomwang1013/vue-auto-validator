@@ -1,8 +1,9 @@
 {
   "name": "vue-auto-validator",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "simple form validator inspired by jquery-validation plugin",
   "main": "index.vue",
+  "files": ["lib"],
   "scripts": {
     "build:example": "webpack --watch"
   },

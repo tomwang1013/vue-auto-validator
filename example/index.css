@@ -15,3 +15,21 @@ input.u-field-ok, select.u-field-ok {
 *:focus{
   outline: none;
 }
+
+.ctrl-grp {
+  width: 50%;
+  max-width: 100%;
+  margin: 5px 0;
+}
+
+.ctrl-grp > label:first-child {
+  display: inline-block;
+  width: 30%;
+  text-align: right;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+[type=submit] {
+  margin-left: calc(30% + 10px);
+}

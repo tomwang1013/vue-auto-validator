@@ -8,13 +8,23 @@ new Vue({
     rules: {
       email: {
         required: true,
-        email: true
+        email: true,
+        remote: 'remote url'
       },
       password: {
-        required: true
+        required: true,
+        minLength: 3,
+        maxLength: 6
+      },
+      passwordConfirm: {
+        equalTo: 'password'
       },
       gender: {
         required: true
+      },
+      age: {
+        min: 18,
+        max: 100
       },
       choice: {
         required: true
@@ -27,13 +37,23 @@ new Vue({
     messages: {
       email: {
         required: 'email is required!',
-        email: 'invalid email format'
+        email: 'invalid email format',
+        remote: 'ajax validation failed'
       },
       password: {
-        required: 'password is required'
+        required: 'password is required',
+        minLength: 'password min length: {0}',
+        maxLength: 'password max length: {0}'
+      },
+      passwordConfirm: {
+        equalTo: 'must be equal to password'
       },
       gender: {
         required: 'gender is required!'
+      },
+      age: {
+        min: 'age must be greater or equal to {0}',
+        max: 'age must be less or equal to {0}'
       },
       choice: {
         required: 'choice is required!'
