@@ -12,6 +12,15 @@ new Vue({
       },
       password: {
         required: true
+      },
+      gender: {
+        required: true
+      },
+      choice: {
+        required: true
+      },
+      has_kids: {
+        required: true
       }
     },
 
@@ -22,6 +31,15 @@ new Vue({
       },
       password: {
         required: 'password is required'
+      },
+      gender: {
+        required: 'gender is required!'
+      },
+      choice: {
+        required: 'choice is required!'
+      },
+      has_kids: {
+        required: 'has_kids is required!'
       }
     },
 

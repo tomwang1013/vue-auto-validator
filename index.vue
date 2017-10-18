@@ -54,11 +54,6 @@
         default: defaultProps.validFieldClass
       },
 
-      errorPlacement: {
-        type: String,
-        default: defaultProps.errorPlacement
-      },
-
       // validation rules
       rules: {
         type: Object,
@@ -114,10 +109,8 @@
         this.submitting = true;
         this.firstInvalidName = '';
 
-        _.keys(this.rules).forEach(fieldName => {
-          this.fieldValidateds[fieldName] = false;
-          this.validateField(fieldName);
-        });
+        _.keys(this.rules).forEach(fieldName => this.fieldValidateds[fieldName] = false);
+        _.keys(this.rules).forEach(fieldName => this.validateField(fieldName));
       },
 
       _tryValidate: function(evt) {
@@ -133,6 +126,34 @@
       },
 
       /**
+       * highlight invalid field
+       */
+      _hightlightField(field) {
+        if (field instanceof Element) {
+          field = [field];
+        }
+
+        _.forEach(field, f => {
+          f.classList.remove(this.validFieldClass);
+          f.classList.add(this.errorFieldClass);
+        })
+      },
+
+      /**
+       * unhighlight invalid field
+       */
+      _unhightlightField(field) {
+        if (field instanceof Element) {
+          field = [field];
+        }
+
+        _.forEach(field, f => {
+          f.classList.remove(this.errorFieldClass);
+          f.classList.add(this.validFieldClass);
+        })
+      },
+
+      /**
        * update field state according to the validation result
        * @param fieldName {String}  field name
        * @param valid     {Boolean} if it is valid
@@ -144,11 +165,10 @@
 
         if (valid) {
           errCmp.hide();
-          fieldEle.classList.remove(this.errorFieldClass);
-          fieldEle.classList.add(this.validFieldClass);
+          this._unhightlightField(fieldEle);
         } else {
           errCmp.show(msg);
-          fieldEle.classList.add(this.errorFieldClass);
+          this._hightlightField(fieldEle);
           
           if (!this.firstInvalidName) {
             this.firstInvalidName = fieldName;
@@ -204,12 +224,7 @@
        * setup all rules
        */
       setupRules: function() {
-        let fm = this.getForm();
-
         _.forOwn(this.rules, (rule, fieldName) => {
-          let field = this.getFieldEle(fieldName);
-          let label = fm.querySelector("label[for='" + (field.id || field.name) + "']");
-
           this.errors[fieldName] = new ErrMsgCtor({
             propsData: {
               name: fieldName,
@@ -218,23 +233,26 @@
           }).$mount();
 
           let errRoot = this.errors[fieldName].$el;
+          let field = this.getFieldEle(fieldName);
 
-          switch (this.errorPlacement) {
-            case 'before-label':
-              label.parentNode.insertBefore(errRoot, label);
-              break;
-            case 'after-label':
-              label.parentNode.insertBefore(errRoot, label.nextElementSibling);
-              break;
-            case 'before-field':
-              field.parentNode.insertBefore(errRoot, field);
-              break;
-            case 'after-field':
-              field.parentNode.insertBefore(errRoot, field.nextElementSibling);
-              break;
-            default:
-              console.error('invalid errorPlacement: ' + this.errorPlacement);
-              break;
+          // put the error message after both of label(if any) & field
+          if (!(field instanceof Element)) {
+            field = _.last(field);
+          }
+
+          if (field.nextElementSibling && field.nextElementSibling.htmlFor === field.id) {
+            // label after field
+            field.parentNode.insertBefore(errRoot, field.nextElementSibling.nextElementSibling);
+          } else if (field.previousElementSibling && field.previousElementSibling.htmlFor === field.id) {
+            // label before field
+            field.parentNode.insertBefore(errRoot, field.nextElementSibling);
+          } else if (field.parentNode.htmlFor === field.id) {
+            // label wraps field
+            let label = field.parentNode;
+            label.parentNode.insertBefore(errRoot, label.nextElementSibling);
+          } else {
+            // no label
+            field.parentNode.insertBefore(errRoot, field.nextElementSibling);
           }
         })
       }

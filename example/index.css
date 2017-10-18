@@ -1,3 +1,17 @@
 .u-msg-error {
   color: red;
 }
+
+input.u-msg-error, select.u-msg-error {
+  border: 1px solid red;
+  color: unset;
+}
+
+input.u-field-ok, select.u-field-ok {
+  border: 1px solid green;
+  color: unset;
+}
+
+*:focus{
+  outline: none;
+}
