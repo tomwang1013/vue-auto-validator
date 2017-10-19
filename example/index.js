@@ -8,6 +8,7 @@ Validator.addValidationMethod('between', (value, [min, max]) => {
 });
 
 Vue.component('validator', Validator);
+
 new Vue({
   el: '#app',
   data: {

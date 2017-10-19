@@ -9,10 +9,10 @@ vue-auto-validator is a flexible and simple vue component for form validation, w
 ## usage
 javascript:
 ```javascript
-var FormValidator = require('vue-auto-validator')
-var Vue = require('vue');
+import FormValidator from 'vue-auto-validator'
+import Vue from 'vue'
 
-var fv = new Vue({
+new Vue({
   el: '#form-wrapper',
 
   data: {
@@ -35,9 +35,7 @@ var fv = new Vue({
     }
   },
 
-  components: {
-    'form-validator': FormValidator
-  }
+  components: { FormValidator }
 });
 
 ```
@@ -62,7 +60,90 @@ For html, just use `form-validator` instead of `form`:
 That's all!
 
 # component detail
-## validation methods
+
+## props
+
+- **rules**
+
+Set the rules for all the fields you need to validate. A rule defines applying which validation 
+methods to a single field, the format is:
+```
+{
+  'field-name1: {
+    'method-name1': params1,
+    'method-name2': params2,
+    ...
+  }
+}
+```
+e.g.
+```javascript
+{
+  password: {
+    required: true,
+    minLength: 6,
+  }
+}
+```
+
+- **messages**
+
+Error messages when validation fail. The format structure is the same as `rules`:
+```
+'field-name1: {
+    'method-name1': message1,
+    'method-name2': message2,
+    ...
+  }
+```
+e.g.
+```javascript
+{
+  password: {
+    required: 'password is required',
+    minLength: 'password length must be at least {0}' // {0} will be replaced by 6
+  }
+}
+```
+
+- **submitHandler**
+
+The form's submit event handler, the default action is just submit the form. The function will take 
+the validator vue instance as the only argument:
+
+```javascript
+function submitHandler(validator) {
+  // default action
+  validator.getForm().submit();
+}
+```
+
+You can provide your own handler override the default one.
+
+- **invalidHandler**
+
+The callback called when validation failed on submit. By default it do nothing! The function format
+is same as `submitHandler`
+
+- **errorMsgClass**
+
+css class of the error message element which wrapped by a `span` appended after the field. The default 
+value is `u-msg-error`
+
+- **errorFieldClass**
+
+css class of the failed field. The default value is `u-msg-error`
+
+- **validFieldClass**
+
+css class of the successful field. The default value is `u-field-ok`
+
+- **validateOnlyOnSubmit**
+
+Whether perform the validation only when submitting the form, by default false
+
+## predefined validation methods
+
 1. `required(true)`
 2. `minLength(min-string-length)`
 3. `maxLength(max-string-length)`
@@ -72,132 +153,80 @@ That's all!
 7. `equalTo(other-field-name)`
 8. `remote(url)` result returned from server should be of form: `{ valid: true/false, message: error message if invalid }`
 
-#### add custom validation methods:
+## add custom validation methods:
+
+Apart from the predefined validation methods, you can add your own by `FormValidator#addValidationMethod`:
+
 ```javascript
-var FV = require('vue-auto-validator');
-
-// element: form field
-// args: single value or array
-// return true if validation passes, false otherwise
-FV.addValidationMethod('method-name', function(element, [args]) {
-  // e.g.
-  return element.value.length == 6; 
-});   
-```
-
-## props
-**rules**
-
-a rule defines applying which validation methods to a single form field, as:
-```javascript
-{
-  'field-name': {
-    'validation-method-name': params
-  }
-}
+import FormValidator from 'vue-auto-validator'
+FormValidator.addValidationMethod('method-name', (value, args) => {
+  // value: field value, may be a string or array of string
+  // args: may be a single value or array of values as needed
+  // return: true when validation passed or false
+})
 ```
 e.g.
 ```javascript
-{
-  password: {
-    minLength: 6
-  }
-}
-```
-For bool validation rule, we can omit the params:
-```javascript
-{
-  name: 'required' // same as name: { required: true }
-}
-```
-**messages**
-
-one-to-one error message for rules:
-
-```javascript
-{
-  name: 'name should not empty',
-  password: {
-    minLength: 'at least {0} chars' // {i} will be replaced by the ith param
-  }
-}
+FormValidator.addValidationMethod('between', function(value, [min, max]) {
+  value = parseInt(value);
+  return min <= value && value <= max;
+});   
 ```
 
-**submitHandler(form-validator, form)**
+## public methods
+- **getForm**
 
-callback called when validation passes on submit. If not provided, follow default form submit behavior. It is the rignt place to ajax sutmit, like:
-```javascript
-submitHandler: (function(validator, form) {
-  var args = $(form).serializeObject();     
-  var me = this; 
+Get the form dom element
 
-  $.post(form.action, args, function(data) {
-    if (data.error) {
-      me.success = false;
-      validator.showErrors(data.errors);
-    } else {
-      me.success = true;
-    }
-  }, 'json');
-}).bind(this) // bind this if you like
+- **getFieldEle(name)**
 
+Get the form element by field's name attr
+
+- **getFieldValue(name)**
+
+Get field's value by its name. The value may be a single string or array of strings
+
+- **getErrorMsgMap**
+
+Get all the form's current error messages as `{ name: msg, ... }`
+
+- **showErrors(errors)**
+
+explicitly display errors. argument `errors` is a map from field name to error message like: 
+`{ name: msg, ... }`
+
+- **formatMsg(msg, args)**
+
+Utility function to format error message according to args as follows:
 ```
-**invalidHandler**
+msg: 'abc{0}cde{1}', 
+args: [3,4] 
+return: 'abc3cde4'
+```
 
-callback called when validation failed on submit
+- **validateAllFields**
 
-**errorClass**
+Validate all the form's fields and show error messages if some failes
 
-css class name for error messages(`span` tag) and related invalid field, default: u-input-error
+- **validateField(name)**
 
-**validFieldClass**
-
-css class name for valid field, default: u-input-ok
-
-**errorPlacement**
-
-where to place the error message, being one of the following value:
-  - before_label: before the label
-  - after_label: after the label
-  - before_field: before the field
-  - after_field: after the field
-  
-**highlight**
-
-how to highlight the invalid field, default: add `errorClass` to it
-
-**unhighlight**
-
-how to unhighlight the valid field, default: add `validFieldClass` to it
-
-**focusInvalidOnSubmit**
-
-whether to focus the first invalid field when validation failed on submit
-
-## useful public methods
-**showErrors(errors)**
-
-explicitly display errors. argument `errors` is a map from field name to error message like: `{ name: 'bad name' }`
-
-**setupRules()**
-
-by default, rules are setup in form-validator's `mounted` hook(controlled by `setupRulesOnMounted` prop). Sometimes it is not what you want. You can manually setup rules by calling this function(set `setupRulesOnMounted` to false)
+Validate a single field and show error messages if it failes
 
 ## events emitted
-**this.$emit('invalidfield', field-name, message)**
+
+- **this.$emit('invalidfield', name, message)**
 
 emitted when a field's validation failed
 
-**this.$emit('invalidform', errorMsgMaps)**
+- **this.$emit('invalidform', errorMsgMap)**
 
-emitted when the form's validation failed on submit. `errorMsgMaps` is all errors map from field name to message
+emitted when the form's validation failed on submit. `errorMsgMap` is all errors map from field 
+name to message
 
-## global props configure
-you can set the props default values for all forms globally:
-```javascript
-var FV  = require('vue-auto-validator');
+- **this.$emit('validfield', name)**
 
-FV.setDefaultProps({
-  // common props for all forms
-})
-```
+emitted when a field's validation passed
+
+- **this.$emit('validform')**
+
+emitted when the form's validation passed on submit

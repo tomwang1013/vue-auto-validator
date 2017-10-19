@@ -1,8 +1,8 @@
 <template>
   <form @submit.prevent='_onsubmit'
-    @focusout='_tryValidate'
-    @change='_tryValidate'
-    @input='_tryValidate' ref='fm'>
+        @focusout='_tryValidate'
+        @change='_tryValidate'
+        @input='_tryValidate' ref='fm'>
     <slot>all fields here</slot>
   </form>
 </template>
@@ -12,7 +12,6 @@
   import _ from 'lodash'
   import ErrMsg from './lib/error_message.vue'
   import methods from './lib/validate_methods.js'
-  import defaultProps from './lib/default_props.js'
 
   const ErrMsgCtor = Vue.extend(ErrMsg);
 
@@ -29,29 +28,43 @@
     },
 
     props: {
+      // default submit handler when validation passed
+      // will be called with this bind to the validator
       submitHandler: {
         type: Function,
-        default: defaultProps.submitHandler
+        default: function (validator) {
+          validator.getForm().submit();
+        }
       },
 
+      // default handler when validation failed: default do nothing
       invalidHandler: {
         type: Function,
-        default: defaultProps.invalidHandler
+        default: function (validator) {}
       },
 
+      // error message css class
       errorMsgClass: {
         type: String,
-        default: defaultProps.errorMsgClass
+        default: 'u-msg-error'
       },
 
+      // error field css class: same as message by default
       errorFieldClass: {
         type: String,
-        default: defaultProps.errorFieldClass
+        default: 'u-msg-error'
       },
 
+      // valid field css class
       validFieldClass: {
         type: String,
-        default: defaultProps.validFieldClass
+        default: 'u-field-ok'
+      },
+
+      // if perform validation only on submit
+      validateOnlyOnSubmit: {
+        type: Boolean,
+        default: false
       },
 
       // validation rules
@@ -71,11 +84,25 @@
       methods.addValidationMethod(methodName, fn);
     },
 
-    setDefaultProps: function(options) {
-      defaultProps.setDefaultProps(options);
+    mounted: function() {
+      this._setupRules();
     },
 
     methods: {
+      // get the form element
+      getForm() {
+        return this.$refs.fm;
+      },
+
+      /**
+       * get a form field element
+       * @param name {String} field name
+       * @return {Element}
+       */
+      getFieldEle(name) {
+        return this.getForm()[name];
+      },
+      
       /**
        * get form field's value
        * @param name {String} field name
@@ -100,8 +127,11 @@
         return '';
       },
 
-      // { field name => [error message] }
-      errorMsgMap: function() {
+      /**
+       * get all current error messages
+       * @return {Object} { [field name] => [error message] }
+       */
+      getErrorMsgMap: function() {
         let invalidErrors = _.pickBy(this.errors, function(err) {
           return !err.isValid();
         });
@@ -111,50 +141,74 @@
         });
       },
 
-      // manually set error messages
+      /**
+       * manually show error messages
+       * @param errors {Object} { [field name] => [error message] }
+       * @return undefined
+       */
       showErrors: function(errors) {
         _.forOwn(errors, (msg, name) => this.errors[name].show(msg));
       },
 
-      // get the form element
-      getForm() {
-        return this.$refs.fm;
-      },
-      
       /**
-       * get a form field element
-       * 
-       * @param name {String} field name
-       * @return {Element}
-       */ 
-      getFieldEle(name) {
-        return this.getForm()[name];
-      },
-
-      // msg: 'abc{0}cde{1}', args: [3,4] => 'abc3cde4'
+       * msg: 'abc{0}cde{1}', args: [3,4] => 'abc3cde4'
+       */
       formatMsg: function(msg, args) {
         if (!_.isArray(args)) args = [args];
         return msg.replace(/\{(\d)\}/g, (match, i) => args[i]);
+      },
+
+      /**
+       * validate all fields but not submit the form
+       */
+      validateAllFields() {
+        _.keys(this.rules).forEach(name => this.validateField(name));
+      },
+
+      /**
+       * validate a single field and show error message if failed
+       * @param name {String} field name
+       */
+      validateField: function(name) {
+        let fieldValue = this.getFieldValue(name);
+
+        _.forOwn(this.rules[name], (args, methodName) => {
+          if (methodName === 'remote') {
+            methods[methodName].call(
+              this,
+              fieldValue,
+              name,
+              args, // url
+              this._updateFieldStatus.bind(this));
+          } else if (!methods[methodName].call(this, fieldValue, args)) {
+            this._updateFieldStatus(
+              name,
+              false,
+              this.formatMsg(this.messages[name][methodName], args)
+            );
+            return false; // stop on first failed rule
+          } else {
+            this._updateFieldStatus(name, true, '');
+          }
+        });
       },
 
       // form submit handler
       _onsubmit: function(e) {
         this.submitting = true;
         this.firstInvalidName = '';
-
         _.keys(this.rules).forEach(name => this.fieldValidateds[name] = false);
-        _.keys(this.rules).forEach(name => this.validateField(name));
+        this.validateAllFields();
       },
 
       // try to validate single field when value change or lose focus
       _tryValidate: function(evt) {
-        let name  = evt.target.name;
+        if (this.validateOnlyOnSubmit) return;
+        
+        let name = evt.target.name;
 
         // no need to validate it
         if (!this.rules[name]) return;
-
-        // all fields are valid, validate it on submit
-        if (!this.firstInvalidName) return;
 
         this.validateField(name);
       },
@@ -193,7 +247,7 @@
        * @param valid {Boolean} if it is valid
        * @param msg   {String}  error message if invalid
        */
-      updateFieldStatus: function(name, valid, msg) {
+      _updateFieldStatus: function(name, valid, msg) {
         let fieldEle = this.getFieldEle(name);
         let errCmp = this.errors[name];
 
@@ -204,12 +258,11 @@
         } else {
           errCmp.show(msg);
           this._hightlightField(fieldEle);
-          
-          if (!this.firstInvalidName) {
+          this.$emit('invalidfield', name, msg);
+
+          if (!this.firstInvalidName && this.submitting) {
             this.firstInvalidName = name;
           }
-          
-          this.$emit('invalidfield', name, msg);
         }
 
         // we click submit, check that all fields are validated
@@ -222,9 +275,9 @@
             this.submitting = false;
 
             if (this.firstInvalidName) {
-              this.getFieldEle([this.firstInvalidName]).focus();
+              this._focusFirstInvalidField();
+              this.$emit('invalidform', this.getErrorMsgMap());
               this.invalidHandler.call(null, this);
-              this.$emit('invalidform', this.errorMsgMap());
             } else {
               this.$emit('validform');
               this.submitHandler.call(null, this);
@@ -234,37 +287,24 @@
       },
 
       /**
-       * validate a single field and show error message if failed
-       * @param name
+       * focus the first invalid field after submit
        */
-      validateField: function(name) {
-        let fieldValue = this.getFieldValue(name);
+      _focusFirstInvalidField() {
+        let field = this.getFieldEle(this.firstInvalidName);
 
-        _.forOwn(this.rules[name], (args, methodName) => {
-          if (methodName === 'remote') {
-            methods[methodName].call(
-              this,
-              fieldValue,
-              name,
-              args, // url
-              this.updateFieldStatus.bind(this));
-          } else if (!methods[methodName].call(this, fieldValue, args)) {
-            this.updateFieldStatus(
-              name, 
-              false, 
-              this.formatMsg(this.messages[name][methodName], args)
-            );
-            return false; // stop on first failed rule
-          } else {
-            this.updateFieldStatus(name, true, '');
-          }
-        });
+        if (!(field instanceof Element)) {
+          field = field[0];
+        }
+
+        if (field.focus) {
+          field.focus();
+        }
       },
 
       /**
        * setup all rules
        */
-      setupRules: function() {
+      _setupRules: function() {
         _.forOwn(this.rules, (rule, name) => {
           this.errors[name] = new ErrMsgCtor({
             propsData: {
@@ -297,10 +337,6 @@
           }
         })
       }
-    },
-
-    mounted: function() {
-      this.setupRules();
     }
   };
 </script>
