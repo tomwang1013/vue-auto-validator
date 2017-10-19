@@ -1,5 +1,8 @@
 # introduction
-vue-auto-validator is a flexible and simple vue component for form validation, which is heavy inpired by [jquery-validation](https://jqueryvalidation.org/). It provides some pre-defined validation methods and you can add custom ones. With there validation methods, you set up rules and related messages, as well where to display error messages when validation fails.
+vue-auto-validator is a flexible and simple vue component for form validation, which is heavy inpired 
+by [jquery-validation](https://jqueryvalidation.org/). It provides some pre-defined validation methods 
+and you can add custom ones. With these validation methods, you set up rules and related messages 
+when validation fails
 
 # get started
 
