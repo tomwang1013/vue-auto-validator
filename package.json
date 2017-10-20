@@ -1,11 +1,14 @@
 {
   "name": "vue-auto-validator",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "simple form validator inspired by jquery-validation plugin",
   "main": "index.vue",
-  "files": ["lib"],
+  "files": [
+    "lib"
+  ],
   "scripts": {
-    "build:example": "webpack --watch"
+    "build:example": "webpack --watch",
+    "start": "node ./example/server.js"
   },
   "repository": {
     "type": "git",
@@ -18,13 +21,15 @@
   ],
   "dependencies": {
     "axios": "^0.16.1",
+    "es6-promise": "^4.1.1",
     "lodash": "^4.13.1",
-    "vue":"^2.5.2"
+    "vue": "^2.1.0"
   },
   "devDependencies": {
-    "webpack":"^3.7.1",
+    "express": "^4.16.2",
     "vue-loader": "^13.3.0",
-    "vue-template-compiler":"^2.5.2"
+    "vue-template-compiler": "^2.5.2",
+    "webpack": "^3.7.1"
   },
   "author": "tomwang1013",
   "license": "MIT",

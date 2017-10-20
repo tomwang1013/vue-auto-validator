@@ -16,7 +16,7 @@ new Vue({
       email: {
         required: true,
         email: true,
-        remote: 'remote_url'
+        remote: 'http://localhost:3001/remote_url'
       },
       password: {
         required: true,

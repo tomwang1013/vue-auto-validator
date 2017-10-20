@@ -12,7 +12,9 @@
   import _ from 'lodash'
   import ErrMsg from './lib/error_message.vue'
   import methods from './lib/validate_methods.js'
+  import es6p from 'es6-promise'
 
+  const Promise = es6p.Promise;
   const ErrMsgCtor = Vue.extend(ErrMsg);
 
   export default {
@@ -21,9 +23,6 @@
     data: function() {
       return {
         errors: {},           // field name => error message comp
-        firstInvalidName: '', // first invalid field name on submit
-        fieldValidateds: {},  // record the fields which are already validated on submit
-        submitting: false     // if it is submitting the form, i.e. validating
       };
     },
 
@@ -162,43 +161,50 @@
        * validate all fields but not submit the form
        */
       validateAllFields() {
-        _.keys(this.rules).forEach(name => this.validateField(name));
+        return Promise.all(_.keys(this.rules).map(name => this.validateField(name)));
       },
 
       /**
        * validate a single field and show error message if failed
        * @param name {String} field name
+       * @return {Promise} resolve if passed, else reject
        */
       validateField: function(name) {
-        let fieldValue = this.getFieldValue(name);
+        let value = this.getFieldValue(name);
 
-        _.forOwn(this.rules[name], (args, methodName) => {
-          if (methodName === 'remote') {
-            methods[methodName].call(
-              this,
-              fieldValue,
-              name,
-              args, // url
-              this._updateFieldStatus.bind(this));
-          } else if (!methods[methodName].call(this, fieldValue, args)) {
-            this._updateFieldStatus(
-              name,
-              false,
-              this.formatMsg(this.messages[name][methodName], args)
-            );
-            return false; // stop on first failed rule
-          } else {
-            this._updateFieldStatus(name, true, '');
-          }
+        let validations = _.entries(this.rules[name]).map(([methodName, args]) => {
+          let method = methods[methodName];
+
+          return new Promise((resolve, reject) => {
+            if (methodName === 'remote') {
+              method.call(this, value, name, args).then(({valid, message}) => {
+                if (valid) resolve();
+                else reject(new Error(message));
+              });
+            } else {
+              if (method.call(this, value, args)) resolve();
+              else reject(new Error(this.formatMsg(this.messages[name][methodName], args)));
+            }
+          });
+        });
+
+        return Promise.all(validations).then(() => {
+          this._updateFieldStatus(name, true);
+        }).catch(err => {
+          this._updateFieldStatus(name, false, err.message);
+          throw err;
         });
       },
 
       // form submit handler
       _onsubmit: function(e) {
-        this.submitting = true;
-        this.firstInvalidName = '';
-        _.keys(this.rules).forEach(name => this.fieldValidateds[name] = false);
-        this.validateAllFields();
+        this.validateAllFields().then(() => {
+          this.$emit('validform');
+          this.submitHandler.call(null, this);
+        }).catch(() => {
+          this.$emit('invalidform', this.getErrorMsgMap());
+          this.invalidHandler.call(null, this);
+        });
       },
 
       // try to validate single field when value change or lose focus
@@ -259,38 +265,14 @@
           errCmp.show(msg);
           this._hightlightField(fieldEle);
           this.$emit('invalidfield', name, msg);
-
-          if (!this.firstInvalidName && this.submitting) {
-            this.firstInvalidName = name;
-          }
-        }
-
-        // we click submit, check that all fields are validated
-        // and submit the form if all fields are valid or cancel
-        // if any field is invalid
-        if (this.submitting) {
-          this.fieldValidateds[name] = true;
-
-          if (_.every(_.values(this.fieldValidateds), Boolean)) {
-            this.submitting = false;
-
-            if (this.firstInvalidName) {
-              this._focusFirstInvalidField();
-              this.$emit('invalidform', this.getErrorMsgMap());
-              this.invalidHandler.call(null, this);
-            } else {
-              this.$emit('validform');
-              this.submitHandler.call(null, this);
-            }
-          }
         }
       },
 
       /**
        * focus the first invalid field after submit
        */
-      _focusFirstInvalidField() {
-        let field = this.getFieldEle(this.firstInvalidName);
+      _focusFirstInvalidField(firstInvalidName) {
+        let field = this.getFieldEle(firstInvalidName);
 
         if (!(field instanceof Element)) {
           field = field[0];

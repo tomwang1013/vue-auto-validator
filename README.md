@@ -209,11 +209,29 @@ return: 'abc3cde4'
 
 - **validateAllFields**
 
-Validate all the form's fields and show error messages if some failes
+Validate all the form's fields and show error messages if some failes, usage:
+
+```javascript
+validator.validateAllFields().then(() => {
+  // all fields' validation passed
+}).catch(err => {
+  // some field's validation failed
+  console.log(err.message);
+})
+```
 
 - **validateField(name)**
 
-Validate a single field and show error messages if it failes
+Validate a single field and show error messages if it failes, usage:
+
+```javascript
+validator.validateField(name).then(() => {
+  // validation passed
+}).catch(err => {
+  // validation failed
+  console.log(err.message);
+})
+```
 
 ## events emitted
 
